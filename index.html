@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>React Quiz</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.min.js" ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <div id="root">
+    </div>
+    <script type="text/babel">
+    const App = () => {
+        const hardcodedQuiz = [
+            { 
+                id: 0,
+                title: "What is Closure?",
+                options: ["Function", "Scope", "Object", "Context"],
+                answer: "Scope"
+            },
+            {
+                id: 1,
+                title: "What is Let scoped?",
+                options: ["Global", "Local", "Block", "Function"],
+                answer: "Block"
+            },
+            {
+               id: 2,
+               title: "What will be output of console.log([2,`Hi`]+7)",
+               options: ["2Hi7", "2,Hi,7", "NaN", "2,Hi7"],
+               answer: "2,Hi7"
+            },
+        ];
+        const [ { currentId, mark }, dispatch ] = React.useReducer((state, action)=>{
+             return {...state, [action]: state[action]+1};
+        },{ currentId: 0, mark: 0});
+        const [ selected, setSelected ] = React.useState(null);
+        const [ quizes, setQuiz ] = React.useState(hardcodedQuiz);
+        React.useEffect(()=>{
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "./server.php");
+            xhr.send();
+            xhr.onload = function() {
+                setQuiz(JSON.parse(xhr.response));
+             }
+            xhr.onerror = function(err) {
+                console.log(err);
+             }
+        },[]);
+        const length = quizes.length;
+        const setOption = (e) => {
+             setSelected(e.target.value);
+        }
+        const check = () => {
+            if(currentId<=length){
+                selected===quizes[currentId].answer && dispatch("mark");
+                currentId!==length && dispatch("currentId");
+                setSelected(null);
+            }
+        }
+        const Quiz = ({quiz}) => {
+            return(
+                <div className="center">
+                    {currentId===quiz.id && 
+                        <div>
+                            <h3>Choose the correct answer of {quiz.id+1}</h3>
+                            <h4>{quiz.title}</h4>
+                            <div className="options">
+                                {quiz.options.map((option)=> {
+                                    const id = quiz.id+option;
+                                    return (
+                                    <div key={option} className="input-group">
+                                        <input 
+                                         type="radio" 
+                                         name={option.title} 
+                                         id={id} 
+                                         value={option}
+                                         checked={selected===option}
+                                         onChange={setOption}
+                                        />
+                                        <label 
+                                         htmlFor={id}
+                                        >
+                                        {option}
+                                        </label>
+                                    </div>
+                                )})}
+                            </div>
+                        </div>
+                    }
+                </div>
+            );
+        }
+        return(
+            <div className="app">
+                <form>
+                    <div className="center">
+                        {quizes.map((quiz)=> (
+                            <Quiz quiz={quiz} key={quiz.id} />
+                          ))}
+                    </div>
+                    <div className="center">
+                        {currentId===length ? 
+                           (<p>Your mark: {mark}</p> ) : 
+                           (<button type="button" onClick={check} disabled={!quizes[currentId].options.includes(selected)}>Next</button>)}
+                    </div>
+                </form>
+            </div>
+        );
+    }
+    ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+</body>
+</html>
